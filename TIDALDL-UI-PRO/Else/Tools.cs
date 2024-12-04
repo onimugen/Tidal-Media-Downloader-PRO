@@ -1,4 +1,4 @@
-﻿using AIGS.Common;
+using AIGS.Common;
 using AIGS.Helper;
 using MediaToolkit;
 using MediaToolkit.Model;
@@ -63,7 +63,7 @@ namespace TIDALDL_UI.Else
 
                 // album folder pre: [ME][ID]
                 string flag = Client.GetFlag(album, eType.ALBUM, true, "");
-                if (settings.AudioQuality != eAudioQuality.Master)
+                if (settings.AudioQuality != eAudioQuality.MAX)
                     flag = flag.Replace("M", "");
                 if (flag.IsNotBlank())
                     flag = $"[{flag}]";
@@ -94,7 +94,7 @@ namespace TIDALDL_UI.Else
 
             // album folder pre: [ME][ID]
             string flag = Client.GetFlag(album, eType.ALBUM, true, "");
-            if (settings.AudioQuality != eAudioQuality.Master)
+            if (settings.AudioQuality != eAudioQuality.MAX)
                 flag = flag.Replace("M", "");
             if (flag.IsNotBlank())
                 flag = $"[{flag}]";
@@ -400,8 +400,6 @@ namespace TIDALDL_UI.Else
                 return e.Message;
             }
         }
-
-
 
         #region Decrypt File
         static byte[] MASTER_KEY = System.Convert.FromBase64String("UIlTTEMmmLfGowo/UC60x2H45W6MdGgTRfo/umg4754=");

@@ -1,4 +1,4 @@
-﻿using AIGS.Helper;
+using AIGS.Helper;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using TidalLib;
@@ -107,7 +107,7 @@ namespace TIDALDL_UI.Else
         public bool UseTrackNumber { get; set; } = true;
 
         [JsonProperty("AudioQuality")]
-        public eAudioQuality AudioQuality { get; set; } = eAudioQuality.HiFi;
+        public eAudioQuality AudioQuality { get; set; } = eAudioQuality.MAX;
 
         [JsonProperty("MaxFileName")]
         public int MaxFileName { get; set; } = 50;
@@ -142,13 +142,13 @@ namespace TIDALDL_UI.Else
 
         [JsonProperty("AlbumFolderFormat")]
         
-        public string AlbumFolderFormat { get; set; } = "{ArtistName}/{Flag} {AlbumTitle} [{AlbumID}] [{AlbumYear}]";
+        public string AlbumFolderFormat { get; set; } = "{ArtistName}/{Flag} {AlbumTitle} [{AlbumID}] [{AlbumYear}]" ;
 
         [JsonProperty("TrackFileFormat")]
-        public string TrackFileFormat { get; set; } = "{TrackNumber} - {ArtistName} - {TrackTitle}{ExplicitFlag}";
+        public string TrackFileFormat { get; set; } = "{TrackNumber} - {ArtistName} - {TrackTitle}{ExplicitFlag}" ;
 
         [JsonProperty("VideoFileFormat")]
-        public string VideoFileFormat { get; set; } = "{ArtistName}/{TrackNumber} - {VideoTitle}{ExplicitFlag}";
+        public string VideoFileFormat { get; set; } = "{ArtistName}/{TrackNumber} - {VideoTitle}{ExplicitFlag}" ;
 
 
         public static void Change(Settings newItem, Settings oldItem = null)
@@ -184,4 +184,3 @@ namespace TIDALDL_UI.Else
         After,
     }
 }
-
