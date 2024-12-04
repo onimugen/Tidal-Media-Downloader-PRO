@@ -1,4 +1,4 @@
-﻿using AIGS.Common;
+using AIGS.Common;
 using AIGS.Helper;
 using HandyControl.Controls;
 using Stylet;
@@ -55,6 +55,12 @@ namespace TIDALDL_UI.Pages
             else
             {
                 searchText = method;
+            }
+
+            // Limpiar la URL de parámetros de consulta
+            if (searchText != null && searchText.Contains("?"))
+            {
+                searchText = searchText.Split('?')[0];
             }
 
             if (searchText.IsBlank())
