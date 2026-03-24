@@ -32,6 +32,12 @@ namespace TIDALDL_UI.Else
         [JsonProperty("Refreshtoken")]
         public string Refreshtoken { get; set; } = null;
 
+        [JsonProperty("ClientId")]
+        public string ClientId { get; set; } = null;
+
+        [JsonProperty("ClientSecret")]
+        public string ClientSecret { get; set; } = null;
+
         [JsonProperty("Remember")]
         public bool Remember { get; set; } = true;
 
@@ -107,7 +113,7 @@ namespace TIDALDL_UI.Else
         public bool UseTrackNumber { get; set; } = true;
 
         [JsonProperty("AudioQuality")]
-        public eAudioQuality AudioQuality { get; set; } = eAudioQuality.MAX;
+        public eAudioQuality AudioQuality { get; set; } = eAudioQuality.Master;
 
         [JsonProperty("MaxFileName")]
         public int MaxFileName { get; set; } = 50;

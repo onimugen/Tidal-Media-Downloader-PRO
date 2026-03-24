@@ -250,7 +250,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="TidalLib">
-      <HintPath>..\..\TidalLib\TidalLib\bin\Release\TidalLib.dll</HintPath>
+      <HintPath>..\..\TidalLib\TidalLib\TidalLib\bin\Release\TidalLib.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />

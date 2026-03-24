@@ -92,7 +92,7 @@ namespace TIDALDL_UI.Else
                 if (Progress.Errmsg.IsNotBlank() || Stream == null)
                     goto ERR_RETURN;
 
-                Codec = Stream.Codec;
+                Codec = GetQualityLabel(Stream.Codec, Stream.SoundQuality);
                 Progress.StatusMsg = "GetStream success...";
 
                 if (TidalAlbum == null && TidalTrack.Album != null)
@@ -115,47 +115,100 @@ namespace TIDALDL_UI.Else
 
                 //Download
                 Progress.StatusMsg = "Start...";
-                for (int i = 0; i < 50 && Progress.GetStatus() != ProgressHelper.STATUS.CANCLE; i++)
+                bool downloaded = false;
+
+                if (Stream.IsDash)
                 {
-                    StartTime = TimeHelper.GetCurrentTime();
-                    if ((bool)DownloadFileHepler.Start(Stream.Url, path, Timeout: 5 * 1000, UpdateFunc: UpdateDownloadNotify, ErrFunc: ErrDownloadNotify, Proxy: key.Proxy))
+                    // Download each segment to individual temp files
+                    var segPaths = new System.Collections.Generic.List<string>();
+                    for (int seg = 0; seg < Stream.SegmentUrls.Count; seg++)
                     {
-                        //Decrypt
-                        Progress.StatusMsg = "Decrypt...";
-                        if (!Tools.DecryptTrackFile(Stream, path))
+                        if (Progress.GetStatus() == ProgressHelper.STATUS.CANCLE)
                         {
-                            Progress.Errmsg = "Decrypt failed!";
+                            foreach (var sp in segPaths) if (System.IO.File.Exists(sp)) System.IO.File.Delete(sp);
+                            goto CALL_RETURN;
+                        }
+
+                        string segPath = path + $".seg{seg}.tmp";
+                        bool segOk = false;
+                        for (int retry = 0; retry < 3 && !segOk; retry++)
+                        {
+                            StartTime = TimeHelper.GetCurrentTime();
+                            segOk = (bool)DownloadFileHepler.Start(Stream.SegmentUrls[seg], segPath, Timeout: 15 * 1000, Proxy: key.Proxy);
+                        }
+                        if (!segOk)
+                        {
+                            Progress.Errmsg = $"Failed to download segment {seg + 1}/{Stream.SegmentUrls.Count}";
+                            foreach (var sp in segPaths) if (System.IO.File.Exists(sp)) System.IO.File.Delete(sp);
                             goto ERR_RETURN;
                         }
+                        segPaths.Add(segPath);
+                        Progress.UpdateInt(seg + 1, Stream.SegmentUrls.Count);
+                    }
 
-                        if (Settings.OnlyM4a)
+                    // Merge with ffmpeg -f concat -c copy
+                    Progress.StatusMsg = "Merging...";
+                    Progress.Errmsg = Tools.MergeDashSegments(segPaths, path);
+                    foreach (var sp in segPaths) if (System.IO.File.Exists(sp)) System.IO.File.Delete(sp);
+                    if (Progress.Errmsg.IsNotBlank())
+                        goto ERR_RETURN;
+
+                    downloaded = true;
+                }
+                else
+                {
+                    for (int i = 0; i < 50 && Progress.GetStatus() != ProgressHelper.STATUS.CANCLE; i++)
+                    {
+                        StartTime = TimeHelper.GetCurrentTime();
+                        if ((bool)DownloadFileHepler.Start(Stream.Url, path, Timeout: 5 * 1000, UpdateFunc: UpdateDownloadNotify, ErrFunc: ErrDownloadNotify, Proxy: key.Proxy))
                         {
-                            (Progress.Errmsg, path) = Tools.ConvertMp4ToM4a(path, Stream);
-                            if (Progress.Errmsg.IsNotBlank())
-                                goto ERR_RETURN;
+                            downloaded = true;
+                            break;
                         }
-
-                        //Get lyrics
-                        Progress.StatusMsg = "Get lyrics...";
-                        string lyrics = Client.GetLyrics(key, TidalTrack.Title, TidalTrack.Artist == null ? "" : TidalTrack.Artist.Name);
-
-                        //SetMetaData
-                        Progress.StatusMsg = "Set metaData...";
-                        if (TidalAlbum == null)
-                            (Progress.Errmsg, TidalAlbum) = Client.GetAlbum(key, TidalTrack.Album.ID, false).Result;
-                        Progress.Errmsg = Tools.SetMetaData(path, TidalAlbum, TidalTrack, lyrics);
-                        if (Progress.Errmsg.IsNotBlank())
-                        {
-                            Progress.Errmsg = "Set metadata failed!" + Progress.Errmsg;
-                            goto ERR_RETURN;
-                        }
-
-                        Progress.SetStatus(ProgressHelper.STATUS.COMPLETE);
-                        goto CALL_RETURN;
                     }
                 }
-                Progress.Errmsg = "Download failed!";
-                System.IO.File.Delete(path);
+
+                if (!downloaded)
+                {
+                    Progress.Errmsg = "Download failed!";
+                    System.IO.File.Delete(path);
+                    goto ERR_RETURN;
+                }
+
+                {
+                    //Decrypt
+                    Progress.StatusMsg = "Decrypt...";
+                    if (!Tools.DecryptTrackFile(Stream, path))
+                    {
+                        Progress.Errmsg = "Decrypt failed!";
+                        goto ERR_RETURN;
+                    }
+
+                    if (Settings.OnlyM4a)
+                    {
+                        (Progress.Errmsg, path) = Tools.ConvertMp4ToM4a(path, Stream);
+                        if (Progress.Errmsg.IsNotBlank())
+                            goto ERR_RETURN;
+                    }
+
+                    //Get lyrics
+                    Progress.StatusMsg = "Get lyrics...";
+                    string lyrics = Client.GetLyrics(key, TidalTrack.Title, TidalTrack.Artist == null ? "" : TidalTrack.Artist.Name);
+
+                    //SetMetaData
+                    Progress.StatusMsg = "Set metaData...";
+                    if (TidalAlbum == null)
+                        (Progress.Errmsg, TidalAlbum) = Client.GetAlbum(key, TidalTrack.Album.ID, false).Result;
+                    Progress.Errmsg = Tools.SetMetaData(path, TidalAlbum, TidalTrack, lyrics);
+                    if (Progress.Errmsg.IsNotBlank())
+                    {
+                        Progress.Errmsg = "Set metadata failed!" + Progress.Errmsg;
+                        goto ERR_RETURN;
+                    }
+
+                    Progress.SetStatus(ProgressHelper.STATUS.COMPLETE);
+                    goto CALL_RETURN;
+                }
             }
             catch(Exception e)
             {
@@ -177,6 +230,26 @@ namespace TIDALDL_UI.Else
         {
             Progress.Errmsg = sErrMsg;
             return;
+        }
+
+        private static string GetQualityLabel(string codec, string soundQuality)
+        {
+            string q = (soundQuality ?? "").ToUpper();
+            string c = (codec ?? "").ToLower();
+
+            if (c.Contains("flac"))
+            {
+                if (q == "HI_RES_LOSSLESS") return "FLAC Max";
+                if (q == "LOSSLESS")        return "FLAC HiFi";
+                return "FLAC";
+            }
+            if (c.Contains("mp4a") || c.Contains("aac"))
+            {
+                if (q == "HIGH")   return "AAC 320";
+                if (q == "LOW")    return "AAC 96";
+                return "AAC";
+            }
+            return codec ?? q;
         }
 
         public bool UpdateDownloadNotify(long lTotalSize, long lAlreadyDownloadSize, long lIncreSize, object data)

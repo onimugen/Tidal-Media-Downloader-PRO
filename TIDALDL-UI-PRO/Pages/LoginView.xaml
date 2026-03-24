@@ -53,7 +53,13 @@
                             <TextBlock Text="DeviceCode:" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Padding="10"/>
                             <hc:TextBox Text="{Binding DeviceCode.UserCode}" Height="30" FontWeight="Normal"/>
                         </DockPanel>
-                        <Button Content="Login" IsDefault="True" Command="{s:Action Login}" IsEnabled="{Binding BtnLoginEnable}"  Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,20,5,0"/>
+                        <Button Content="Login (Device Code)" IsDefault="True" Command="{s:Action Login}" IsEnabled="{Binding BtnLoginEnable}"  Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,10,5,0"/>
+                        <Separator Margin="0,10,0,10"/>
+                        <DockPanel>
+                            <TextBlock Text="AccessToken:" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Padding="10"/>
+                            <hc:TextBox Text="{Binding AccessTokenInput, UpdateSourceTrigger=PropertyChanged}" Height="30" FontWeight="Normal" hc:InfoElement.Placeholder="Paste Bearer token here"/>
+                        </DockPanel>
+                        <Button Content="Login (Access Token)" Command="{s:Action LoginWithToken}" IsEnabled="{Binding BtnLoginEnable}" Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,10,5,0"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -100,6 +106,30 @@
                             Content="Login" Grid.RowSpan="2" VerticalAlignment="Center" VerticalContentAlignment="Center" HorizontalAlignment="Stretch" Margin="0,15,0,0"/>
                 </Grid>
             </TabItem>-->
+            <TabItem Header="KEYS" FontWeight="Bold">
+                <Grid Margin="0 16 0 0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="7"/>
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="ClientId" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="Normal"/>
+                    <TextBlock Grid.Row="1" Text="ClientSecret" VerticalAlignment="Center" HorizontalAlignment="Right" FontWeight="Normal"/>
+
+                    <hc:TextBox Grid.Column="2" Text="{Binding Settings.ClientId, UpdateSourceTrigger=PropertyChanged}" Height="30" FontWeight="Normal" hc:InfoElement.Placeholder="e.g. 7m7Ap0JC9j1cOM3n"/>
+                    <hc:TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Settings.ClientSecret, UpdateSourceTrigger=PropertyChanged}" Height="30" FontWeight="Normal" hc:InfoElement.Placeholder="base64 secret"/>
+
+                    <Button Grid.Row="4" Grid.ColumnSpan="3" Command="{s:Action SaveKeys}" Content="{DynamicResource strSave}" Style="{StaticResource ButtonPrimary}" Margin="5,5,5,2" HorizontalAlignment="Stretch" />
+                </Grid>
+            </TabItem>
             <TabItem Header="{DynamicResource strPROXY}" FontWeight="Bold">
                 <Grid Margin="0 16 0 0" >
                     <Grid.RowDefinitions>

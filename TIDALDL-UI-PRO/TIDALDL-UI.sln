@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30204.135
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TIDALDL-UI", "TIDALDL-UI.csproj", "{97AA7FF8-61C6-43AE-B53C-DB6C3D991199}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TidalLib", "..\..\TidalLib\TidalLib\TidalLib.csproj", "{61B3A016-AD7E-421B-B632-877E15BFAA90}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TidalLib", "..\..\TidalLib\TidalLib\TidalLib\TidalLib.csproj", "{61B3A016-AD7E-421B-B632-877E15BFAA90}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AIGS", "..\..\AIGS\AIGS.csproj", "{E0F1B398-B4D4-4536-9135-BE2EB077BBB2}"
 EndProject

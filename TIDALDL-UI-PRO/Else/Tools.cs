@@ -43,6 +43,8 @@ namespace TIDALDL_UI.Else
                 return ".flac";
             if (DlUrl.IndexOf(".mp4") >= 0)
                 return ".mp4";
+            if (DlUrl.IndexOf(".m4s") >= 0)
+                return ".mp4";
             return ".m4a";
         }
 
@@ -63,7 +65,7 @@ namespace TIDALDL_UI.Else
 
                 // album folder pre: [ME][ID]
                 string flag = Client.GetFlag(album, eType.ALBUM, true, "");
-                if (settings.AudioQuality != eAudioQuality.MAX)
+                if (settings.AudioQuality != eAudioQuality.Master)
                     flag = flag.Replace("M", "");
                 if (flag.IsNotBlank())
                     flag = $"[{flag}]";
@@ -94,7 +96,7 @@ namespace TIDALDL_UI.Else
 
             // album folder pre: [ME][ID]
             string flag = Client.GetFlag(album, eType.ALBUM, true, "");
-            if (settings.AudioQuality != eAudioQuality.MAX)
+            if (settings.AudioQuality != eAudioQuality.Master)
                 flag = flag.Replace("M", "");
             if (flag.IsNotBlank())
                 flag = $"[{flag}]";
@@ -311,6 +313,114 @@ namespace TIDALDL_UI.Else
 
             string path = $"{basepath}{number}{artist}{title}{sexplicit}{ext}";
             return path;
+        }
+
+        private static string _cachedFfmpegPath = null;
+
+        private static string FindOrExtractFfmpeg(string triggerFile)
+        {
+            if (_cachedFfmpegPath != null && System.IO.File.Exists(_cachedFfmpegPath))
+                return _cachedFfmpegPath;
+
+            string tmp = System.IO.Path.GetTempPath();
+            string exeDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+            // Check known locations in priority order
+            string[] candidates = new[]
+            {
+                System.IO.Path.Combine(exeDir, "ffmpeg.exe"),
+                System.IO.Path.Combine(tmp, "ffmpeg.exe"),
+                System.IO.Path.Combine(tmp, "MediaToolkit", "ffmpeg.exe"),
+                @"C:\Program Files\Universal Media Server\bin\ffmpeg.exe",
+                @"C:\Program Files (x86)\SVP 4\utils\ffmpeg.exe",
+                @"C:\Program Files\DVDFab\StreamFab\ffmpeg.exe",
+            };
+
+            foreach (string c in candidates)
+                if (System.IO.File.Exists(c)) { _cachedFfmpegPath = c; return c; }
+
+            // Trigger MediaToolkit extraction and re-scan temp
+            try
+            {
+                using (var eng = new Engine())
+                {
+                    var mf = new MediaFile { Filename = triggerFile };
+                    try { eng.GetMetadata(mf); } catch { }
+                }
+            }
+            catch { }
+
+            foreach (string c in candidates)
+                if (System.IO.File.Exists(c)) { _cachedFfmpegPath = c; return c; }
+
+            // Last resort: scan one level deep in temp
+            try
+            {
+                foreach (string dir in System.IO.Directory.GetDirectories(tmp))
+                {
+                    string c = System.IO.Path.Combine(dir, "ffmpeg.exe");
+                    if (System.IO.File.Exists(c)) { _cachedFfmpegPath = c; return c; }
+                }
+            }
+            catch { }
+
+            return null;
+        }
+
+        public static string MergeDashSegments(System.Collections.Generic.List<string> segPaths, string outputPath)
+        {
+            try
+            {
+                if (segPaths == null || segPaths.Count == 0)
+                    return "No segments to merge";
+
+                string ffmpegPath = FindOrExtractFfmpeg(segPaths[0]);
+                if (ffmpegPath == null)
+                    return "ffmpeg not found";
+
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(outputPath)));
+
+                // Step 1: Binary-concatenate all fMP4 segments into a temp mp4.
+                // DASH init segment + media segments are designed to be byte-appended.
+                string tempMp4 = outputPath + ".tmp.mp4";
+                using (var outStream = System.IO.File.OpenWrite(tempMp4))
+                {
+                    foreach (string seg in segPaths)
+                    {
+                        byte[] data = System.IO.File.ReadAllBytes(seg);
+                        outStream.Write(data, 0, data.Length);
+                    }
+                }
+
+                // Step 2: Convert the merged fMP4 to the desired output container.
+                // -vn strips any video/cover streams; -c:a copy does a lossless stream copy.
+                string ffmpegOutput = "";
+                int exitCode = 0;
+                using (var proc = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(ffmpegPath,
+                    $"-y -i \"{tempMp4}\" -vn -c:a copy \"{outputPath}\"")
+                    { RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true }))
+                {
+                    ffmpegOutput = proc.StandardError.ReadToEnd();
+                    proc.WaitForExit();
+                    exitCode = proc.ExitCode;
+                }
+
+                System.IO.File.Delete(tempMp4);
+
+                if (exitCode != 0 || !System.IO.File.Exists(outputPath))
+                {
+                    string lastLine = "";
+                    foreach (string ln in ffmpegOutput.Split('\n'))
+                        if (ln.Trim().Length > 0) lastLine = ln.Trim();
+                    return $"Merge failed: {lastLine}";
+                }
+
+                return null;
+            }
+            catch (Exception e)
+            {
+                return e.Message;
+            }
         }
 
         public static (string, string) ConvertMp4ToM4a(string path, StreamUrl stream)

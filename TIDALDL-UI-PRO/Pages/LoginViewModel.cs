@@ -14,6 +14,7 @@ namespace TIDALDL_UI.Pages
         public bool BtnLoginEnable { get; set; } = true;
         public bool HaveInit { get; set; } = false;
         public TidalDeviceCode DeviceCode { get; set; }
+        public string AccessTokenInput { get; set; } = null;
         public UserSettings Settings { get; set; } = UserSettings.Read();
         private IWindowManager Manager;
         private MainViewModel VMMain;
@@ -31,6 +32,10 @@ namespace TIDALDL_UI.Pages
             if (HaveInit)
                 return;
             HaveInit = true;
+
+            System.Net.ServicePointManager.SecurityProtocol =
+                System.Net.SecurityProtocolType.Tls12 |
+                System.Net.SecurityProtocolType.Tls13;
 
             BtnLoginEnable = false;
 
@@ -59,10 +64,17 @@ namespace TIDALDL_UI.Pages
                 }
             }
 
+            //apply user-saved keys (override Gist if set)
+            Client.SetApiKey(Settings.ClientId, Settings.ClientSecret);
+
+            //refresh API key from Gist (only if user hasn't set custom keys)
+            if (Settings.ClientId.IsBlank())
+                await Client.RefreshApiKey(PROXY);
+
             //get device code
             (string msg1, TidalDeviceCode code) = await Client.GetDeviceCode(PROXY);
-            if (msg1.IsNotBlank())
-                Growl.Error(Language.Get("strmsgGetDeviceCodeFailed"), Global.TOKEN_LOGIN);
+            if (msg1.IsNotBlank() || code == null)
+                Growl.Error(Language.Get("strmsgGetDeviceCodeFailed") + ": " + msg1, Global.TOKEN_LOGIN);
             else
                 DeviceCode = code;
             goto RETURN_POINT;
@@ -90,25 +102,61 @@ namespace TIDALDL_UI.Pages
             {
                 //get device code
                 (string msg1, TidalDeviceCode code) = await Client.GetDeviceCode(PROXY);
-                if (msg1.IsNotBlank())
+                if (msg1.IsNotBlank() || code == null)
                 {
-                    Growl.Error(Language.Get("strmsgGetDeviceCodeFailed"), Global.TOKEN_LOGIN);
+                    Growl.Error(msg1.IsNotBlank() ? msg1 : Language.Get("strmsgGetDeviceCodeFailed"), Global.TOKEN_LOGIN);
                     BtnLoginEnable = true;
                     return;
                 }
-                else
-                    DeviceCode = code;
+                DeviceCode = code;
             }
 
             ThreadHelper.Start(CheckAuthThreadFunc);
             return;
         }
 
-        public void SaveProxy()
+        public async void LoginWithToken()
         {
+            if (AccessTokenInput.IsBlank())
+            {
+                Growl.Error("Please paste an access token.", Global.TOKEN_LOGIN);
+                return;
+            }
+
+            BtnLoginEnable = false;
+
             //Proxy
             HttpHelper.ProxyInfo PROXY = Settings.ProxyEnable ? new HttpHelper.ProxyInfo(Settings.ProxyHost, Settings.ProxyPort, Settings.ProxyUser, Settings.ProxyPwd) : null;
+
+            (string msg, LoginKey key) = await Client.Login(AccessTokenInput.Trim(), PROXY);
+            if (msg.IsNotBlank() || key == null)
+            {
+                Growl.Error("Token login failed: " + msg, Global.TOKEN_LOGIN);
+                BtnLoginEnable = true;
+                return;
+            }
+
+            Settings.Userid = key.UserID;
+            Settings.Countrycode = key.CountryCode;
+            Settings.Accesstoken = AccessTokenInput.Trim();
             Settings.Save();
+            Global.AccessKey = key;
+            Global.CommonKey = key;
+            Global.VideoKey = key;
+
+            Manager.ShowWindow(VMMain);
+            RequestClose();
+        }
+
+        public void SaveProxy()
+        {
+            Settings.Save();
+        }
+
+        public void SaveKeys()
+        {
+            Settings.Save();
+            Client.SetApiKey(Settings.ClientId, Settings.ClientSecret);
         }
 
         public async void Login2()
@@ -212,34 +260,48 @@ namespace TIDALDL_UI.Pages
 
         public void CheckAuthThreadFunc(object[] datas)
         {
-            NetHelper.OpenWeb("https://" + DeviceCode.VerificationUri);
-
-            //Proxy
-            HttpHelper.ProxyInfo PROXY = Settings.ProxyEnable ? new HttpHelper.ProxyInfo(Settings.ProxyHost, Settings.ProxyPort, Settings.ProxyUser, Settings.ProxyPwd) : null;
-
-            (string msg, LoginKey key) = Client.CheckAuthStatus(DeviceCode, PROXY).Result;
-            if (msg.IsNotBlank())
+            try
             {
-                Growl.Error(msg, Global.TOKEN_LOGIN);
-                goto RETURN_POINT;
+                if (DeviceCode == null)
+                {
+                    this.View.Dispatcher.Invoke(() => Growl.Error(Language.Get("strmsgGetDeviceCodeFailed"), Global.TOKEN_LOGIN));
+                    goto RETURN_POINT;
+                }
+
+                NetHelper.OpenWeb("https://" + DeviceCode.VerificationUri + "/" + DeviceCode.UserCode);
+
+                //Proxy
+                HttpHelper.ProxyInfo PROXY = Settings.ProxyEnable ? new HttpHelper.ProxyInfo(Settings.ProxyHost, Settings.ProxyPort, Settings.ProxyUser, Settings.ProxyPwd) : null;
+
+                (string msg, LoginKey key) = Client.CheckAuthStatus(DeviceCode, PROXY).Result;
+                if (msg.IsNotBlank())
+                {
+                    this.View.Dispatcher.Invoke(() => Growl.Error(msg, Global.TOKEN_LOGIN));
+                    goto RETURN_POINT;
+                }
+
+                Settings.Userid = key.UserID;
+                Settings.Countrycode = key.CountryCode;
+                Settings.Accesstoken = key.AccessToken;
+                Settings.Refreshtoken = key.RefreshToken;
+                Settings.Save();
+                Global.AccessKey = key;
+                Global.CommonKey = key;
+                Global.VideoKey = key;
+
+                this.View.Dispatcher.Invoke(() => {
+                    Manager.ShowWindow(VMMain);
+                    RequestClose();
+                });
+                return;
+            }
+            catch (Exception ex)
+            {
+                this.View.Dispatcher.Invoke(() => Growl.Error("Login error: " + ex.Message, Global.TOKEN_LOGIN));
             }
 
-            Settings.Userid = key.UserID;
-            Settings.Countrycode = key.CountryCode;
-            Settings.Accesstoken = key.AccessToken;
-            Settings.Refreshtoken = key.RefreshToken;
-            Settings.Save();
-            Global.AccessKey = key;
-            Global.CommonKey = key;
-            Global.VideoKey = key;
-
-            this.View.Dispatcher.Invoke(new Action(() => {
-                Manager.ShowWindow(VMMain);
-                RequestClose();
-            }));
-
         RETURN_POINT:
-            BtnLoginEnable = true;
+            this.View.Dispatcher.Invoke(() => { BtnLoginEnable = true; });
         }
 
     }
