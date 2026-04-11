@@ -252,6 +252,12 @@
     <Reference Include="TidalLib">
       <HintPath>..\..\TidalLib\TidalLib\TidalLib\bin\Release\TidalLib.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Core">
+      <HintPath>packages\Microsoft.Web.WebView2.1.0.2592.51\lib\net462\Microsoft.Web.WebView2.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Web.WebView2.Wpf">
+      <HintPath>packages\Microsoft.Web.WebView2.1.0.2592.51\lib\net462\Microsoft.Web.WebView2.Wpf.dll</HintPath>
+    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -312,6 +318,13 @@
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Pages\LoginViewModel.cs" />
+    <Compile Include="Pages\TidalAuthWindow.xaml.cs">
+      <DependentUpon>TidalAuthWindow.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Pages\TidalAuthWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Compile Include="Pages\MainView.xaml.cs">
       <DependentUpon>MainView.xaml</DependentUpon>
     </Compile>
@@ -471,4 +484,5 @@
     <Error Condition="!Exists('packages\Costura.Fody.5.3.0\build\Costura.Fody.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Costura.Fody.5.3.0\build\Costura.Fody.targets'))" />
   </Target>
   <Import Project="packages\Costura.Fody.5.3.0\build\Costura.Fody.targets" Condition="Exists('packages\Costura.Fody.5.3.0\build\Costura.Fody.targets')" />
+  <Import Project="packages\Microsoft.Web.WebView2.1.0.2592.51\build\Microsoft.Web.WebView2.targets" Condition="Exists('packages\Microsoft.Web.WebView2.1.0.2592.51\build\Microsoft.Web.WebView2.targets')" />
 </Project>

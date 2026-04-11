@@ -1,0 +1,16 @@
+<Window x:Class="TIDALDL_UI.Pages.TidalAuthWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:wv2="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        Title="Log in to Tidal" Height="650" Width="1000"
+        WindowStartupLocation="CenterScreen">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition />
+        </Grid.RowDefinitions>
+        <TextBlock Text="Log in to Tidal. The token will be captured automatically."
+                   Background="#222" Foreground="White" Padding="10,6" FontSize="13"/>
+        <wv2:WebView2 x:Name="WebView" Grid.Row="1"/>
+    </Grid>
+</Window>

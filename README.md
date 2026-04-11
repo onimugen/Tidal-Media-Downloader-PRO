@@ -49,15 +49,45 @@
 
 ## 🤖 Features
 - Download album \ track \ video \ playlist \ artist-albums
-
 - Add metadata to songs
-
 - Selectable video resolution and track quality
+- **DASH streaming support** — Tidal now delivers all tracks as MPEG-DASH manifests; segments are downloaded and merged transparently via ffmpeg
+- **Quality badge** — shows the actual quality received: `FLAC Max` (24-bit HiRes), `FLAC HiFi` (16-bit CD), `AAC 320`, `AAC 96`
+- **Browser login** — one-click login via embedded browser; Bearer token is captured automatically, no manual copying needed
+
+## 🔐 Login
+
+Tidal's public API no longer grants device-code OAuth clients, so the classic "enter your code at tidal.com/link" flow does not work. Two alternatives are supported:
+
+### Option 1 — Browser Login (recommended)
+1. Click **Login with Browser (Auto)** on the LOGIN tab
+2. An embedded browser opens — log in to your Tidal account normally
+3. The token is captured automatically and the window closes
+
+### Option 2 — Manual Token
+1. Open [listen.tidal.com](https://listen.tidal.com) in any browser and log in
+2. Press **F12 → Network** tab, click any request to `api.tidal.com`
+3. Copy the value after `Authorization: Bearer ` in the request headers
+4. Paste it in the **Token** field on the LOGIN tab and click **Login (Token)**
+
+### KEYS tab (optional)
+If you have your own Tidal API `ClientId` / `ClientSecret`, enter them in the **KEYS** tab. Otherwise the app fetches a working key automatically.
+
+## 🎵 Audio Quality
+
+The app requests the best quality your subscription supports and cascades down automatically:
+
+| Badge | Quality | Format |
+|-------|---------|--------|
+| FLAC Max | HI_RES_LOSSLESS (up to 24-bit / 192kHz) | .flac |
+| FLAC HiFi | LOSSLESS (16-bit / 44.1kHz CD) | .flac |
+| AAC 320 | HIGH (320 kbps) | .m4a |
+| AAC 96 | LOW (96 kbps) | .m4a |
+
+> **Note:** HiRes Lossless requires a Tidal HiFi Plus subscription. MQA is no longer offered by Tidal.
 
 ## 💽 User Interface
 <img src="https://i.loli.net/2020/08/19/gqW6zHI1SrKlomC.png" alt="image" style="zoom: 50%;" />
-
-![image-20200806013705425](https://i.loli.net/2020/08/06/sPLowIlCGyOdpVN.png)
 
 ## ☕ Support
 

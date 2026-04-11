@@ -49,17 +49,13 @@
             <TabItem Header="{DynamicResource strLOGIN}" FontWeight="ExtraBold">
                 <Grid Margin="0 16 0 0" >
                     <StackPanel VerticalAlignment="Center">
-                        <DockPanel>
-                            <TextBlock Text="DeviceCode:" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Padding="10"/>
-                            <hc:TextBox Text="{Binding DeviceCode.UserCode}" Height="30" FontWeight="Normal"/>
-                        </DockPanel>
-                        <Button Content="Login (Device Code)" IsDefault="True" Command="{s:Action Login}" IsEnabled="{Binding BtnLoginEnable}"  Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,10,5,0"/>
+                        <Button Content="Login with Browser (Auto)" Command="{s:Action LoginWithBrowser}" IsEnabled="{Binding BtnLoginEnable}" Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,0,5,0"/>
                         <Separator Margin="0,10,0,10"/>
                         <DockPanel>
-                            <TextBlock Text="AccessToken:" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Padding="10"/>
-                            <hc:TextBox Text="{Binding AccessTokenInput, UpdateSourceTrigger=PropertyChanged}" Height="30" FontWeight="Normal" hc:InfoElement.Placeholder="Paste Bearer token here"/>
+                            <TextBlock Text="Token:" VerticalAlignment="Center" HorizontalAlignment="Left" FontWeight="Bold" Padding="10"/>
+                            <hc:TextBox Text="{Binding AccessTokenInput, UpdateSourceTrigger=PropertyChanged}" Height="30" FontWeight="Normal" hc:InfoElement.Placeholder="Or paste Bearer token manually"/>
                         </DockPanel>
-                        <Button Content="Login (Access Token)" Command="{s:Action LoginWithToken}" IsEnabled="{Binding BtnLoginEnable}" Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,10,5,0"/>
+                        <Button Content="Login (Token)" IsDefault="True" Command="{s:Action LoginWithToken}" IsEnabled="{Binding BtnLoginEnable}" Style="{StaticResource ButtonPrimary}" HorizontalAlignment="Stretch" Margin="5,10,5,0"/>
                     </StackPanel>
                 </Grid>
             </TabItem>

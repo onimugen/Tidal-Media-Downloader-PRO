@@ -71,11 +71,9 @@ namespace TIDALDL_UI.Pages
             if (Settings.ClientId.IsBlank())
                 await Client.RefreshApiKey(PROXY);
 
-            //get device code
+            //get device code (silently ignore failure — device code flow requires a Limited Input Device client)
             (string msg1, TidalDeviceCode code) = await Client.GetDeviceCode(PROXY);
-            if (msg1.IsNotBlank() || code == null)
-                Growl.Error(Language.Get("strmsgGetDeviceCodeFailed") + ": " + msg1, Global.TOKEN_LOGIN);
-            else
+            if (msg1.IsBlank() && code != null)
                 DeviceCode = code;
             goto RETURN_POINT;
 
@@ -146,6 +144,17 @@ namespace TIDALDL_UI.Pages
 
             Manager.ShowWindow(VMMain);
             RequestClose();
+        }
+
+        public void LoginWithBrowser()
+        {
+            var win = new TidalAuthWindow();
+            win.Owner = (System.Windows.Window)this.View;
+            if (win.ShowDialog() == true && !string.IsNullOrWhiteSpace(win.CapturedToken))
+            {
+                AccessTokenInput = win.CapturedToken;
+                LoginWithToken();
+            }
         }
 
         public void SaveProxy()
